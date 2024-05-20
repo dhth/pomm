@@ -29,9 +29,11 @@ var (
 	pStart    = flag.Bool("s", false, "start a timer")
 	pBreak    = flag.Bool("b", false, "start a break")
 	pOff      = flag.Bool("o", false, "turn off tracking")
-	notify    = flag.Bool("n", false, "whether to run the notify command")
-	notifyCmd = flag.String("nc", "tmux::display::-d::2000::'fin!'", "command to run for notifying (as a string separated by ::)")
+	notify    = flag.Bool("n", false, "whether to run the notify command; default: false")
+	notifyCmd = flag.String("nc", "tmux::display::-d::2000::'take a break!'", "command to run for notifying (as a string separated by ::)")
 	verbose   = flag.Bool("v", false, "show verbose errors")
+	leftPad   = flag.String("lp", " ", "left pad with this string")
+	rightPad  = flag.String("rp", " ", "right pad with this string")
 )
 
 func main() {
@@ -112,30 +114,31 @@ func main() {
 	if fileContents == offString {
 		return
 	} else if fileContents == breakString {
-		fmt.Printf("break!\n")
+		fmt.Printf("%sbreak!%s\n", *leftPad, *rightPad)
 		return
 	}
 
 	t, err := time.Parse(timeLayout, fileContents)
 	if err != nil {
 		die(*verbose, "Error parsing time:", err)
-		return
 	}
 
 	diff := int(now.Sub(t).Seconds())
 	chunks := diff / 150
 
 	if chunks >= 10 {
-		fmt.Print("\\o/")
+		fmt.Printf("%s\\o/%s", *leftPad, *rightPad)
 		if *notify {
 			_ = exec.Command(notifyCmdParts[0], notifyCmdParts[1:]...).Run()
 		}
 	} else {
+		fmt.Printf(*leftPad)
 		for i := 0; i < chunks; i++ {
 			fmt.Printf("▪")
 		}
 		for i := 0; i < 10-chunks; i++ {
 			fmt.Printf("▫")
 		}
+		fmt.Printf(*rightPad)
 	}
 }
